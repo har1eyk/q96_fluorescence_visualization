@@ -395,7 +395,7 @@ class ProbeMatrixVis(FluorVis):
         df = self.addPrimerAndProbeConcToDf(primerConc)
         # group by Probe and F,R primer concentrations and take mean
         avg_across_row_fwd_rev = df.groupby(by=['Probe_Conc', 'F_primer', 'R_primer'], as_index=False)['Ct'].mean()
-        avg_across_col_probe = df.groupby(by=['Probe_Conc', 'F_primer', 'R_primer'], as_index=False)['Ct'].mean()
+        # avg_across_col_probe = df.groupby(by=['Probe_Conc', 'F_primer', 'R_primer'], as_index=False)['Ct'].mean()
         # # round column Ct to nearest two digits in avg_across_row_fwd_rev
         # stringify 'F_primer','R_primer' and Probe concentrations and concatenate and add to list
         barHeadings_row = (avg_across_row_fwd_rev['F_primer'].astype(str) +
@@ -414,5 +414,5 @@ class ProbeMatrixVis(FluorVis):
             text_auto=True,
             title='Periodicity in Increasing [Fwd, Rev] (Going Across Row)<br>[Probe] Held Constant, Four Points per Condition Averaged')
         return figAvgProbe.show()
-        # return avg_across_row_fwd_rev
-        # return df
+
+class 
