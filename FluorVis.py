@@ -415,4 +415,10 @@ class ProbeMatrixVis(FluorVis):
             title='Periodicity in Increasing [Fwd, Rev] (Going Across Row)<br>[Probe] Held Constant, Four Points per Condition Averaged')
         return figAvgProbe.show()
 
-class 
+class LOD(FluorVis): # calculates LOD for a plate with each conc on a row
+    # probe: str
+    # fileDir: str
+    # fileName: str
+    def __init__(self, probe, fileDir, fileName):
+        super().__init__(probe, fileDir, fileName)
+    
