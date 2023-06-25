@@ -415,7 +415,7 @@ class ProbeMatrixVis():
     def __init__(self, probe, dfExcel):
         self.probe = probe
         self.dfExcel = dfExcel
-    def dfCreate(self): # make a df from the excel data
+    def dfProbeCreate(self): # make a df from the excel data
         # make df from passed sheet name
         df = self.dfExcel['Quan. Result']
         # assign first row to be column header
@@ -441,40 +441,89 @@ class ProbeMatrixVis():
         targetName = quanResult.loc[quanResult['Dye'] == self.probe, 'Target'].iloc[0]
         return targetName
     
-
-    # def addProbePropertiesToDf(self): # make a df from the excel data
-    #     df = self.dfCreateFromQuanResult()
-    #     df.loc[72:92, "Property"]= "Standard" # make property in rows 73-93 "Standard"
-    #     df.loc[93:95, "Property"]= "Negative" 
-    #     standardNumberList = ['Std_1', 'Std_2', 'Std_3', 'Std_4', 'Std_5', 'Std_6', 'Std_7', 'Negative']
-    #     # create a new column with the standard number e.g. std_1, std_2, etc.
-    #     df['StandardNumber'] =np.nan # create new column for standard number
-    #     for j in range(8): # 8 sets of triplicates on two rows
-    #         for k in range(3): # every concentration 3x for std curve
-    #             pos = 72+k+(j*3) # translate row and column to position in df 1..96
-    #             df.loc[pos, 'StandardNumber'] = standardNumberList[j] # set value to primer concentration
-    #     return df
-    # def addPrimerAndProbeConcToDf(self, primerConc):
-    #     primerConc: list
-    #     df = self.addProbePropertiesToDf()
-    #     probeConcs = [50, 100, 200, 400, 600, 800] # Fwd and rev primer concentrations
-    #     if not primerConc: # if list is empty use default values
-    #         primerConc = [200, 300, 400]
-    #     # add probe and primerConc values to two rows all the way to 72
-    #     df['Probe_Conc'] =np.nan
-    #     for i in range(6): # loop through rows except last two rows containing standard curve
-    #         for j in range(3): # loop through primer concentration list
-    #             for k in range(4): # every concentration 4x
-    #                 pos = (12*i)+(4*j)+(k) # translate row and column to position in df 1..96
-    #                 df.loc[pos, 'Probe_Conc'] = probeConcs[i] # set value to primer concentration
-    #     df['F_primer'] =np.nan
-    #     for i in range(6): # loop through rows except last two rows containing standard curve
-    #         for j in range(3): # loop through primer concentration list
-    #             for k in range(4): # every concentration 4x
-    #                 pos = (12*i)+(4*j)+(k) # translate row and column to position in df 1..96
-    #                 df.loc[pos, ['F_primer', 'R_primer']] = primerConc[j] # set value to primer concentration
-    #     return df
-#     def plotProbeStandards(self, primerConc):
+    def addProbePropertiesToDf(self, probeConcList=[], primerConcList=[]): # make a df from the excel data
+        self.probeConcList = probeConcList
+        self.primerConcList = primerConcList 
+        # if probeConcList is empty then default to [50, 100, 200, 400, 600, 800]
+        if len(self.probeConcList)==0:
+            self.probeConcList = [50, 100, 200, 400, 600, 800]
+        # if primerConcList is empty then default to [200, 300, 400]
+        if len(self.primerConcList)==0:
+            self.primerConcList = [200, 300, 400]
+        df = self.dfProbeCreate()
+        df.loc[1:73, "Property"] = "Unknown" # make property in rows 73-93 "Standard"
+        df.loc[73:93, "Property"]= "Standard" # make property in rows 73-93 "Standard"
+        df.loc[94:96, "Property"]= "Negative" 
+        standardNumberList = ['Std_1', 'Std_2', 'Std_3', 'Std_4', 'Std_5', 'Std_6', 'Std_7', 'Negative']
+        # create a new column with the standard number e.g. std_1, std_2, etc.
+        df['StandardNumber'] =np.nan # create new column for standard number
+        for j in range(8): # 8 sets of triplicates on two rows
+            for k in range(3): # every concentration 3x for std curve
+                pos = 73+k+(j*3) # translate row and column to position in df 1..96
+                df.loc[pos, 'StandardNumber'] = standardNumberList[j] # set value to primer concentration
+        df['Probe_Conc'] =np.nan
+        for i in range(6): # loop through rows except last two rows containing standard curve
+            for j in range(3): # loop through primer concentration list
+                for k in range(4): # every concentration 4x
+                    pos = (12*i)+(4*j)+(k)+1 # translate row and column to position in df 1..96
+                    # print ("position i= ", i, "j= ", j, "k= ", k, "pos= ", pos)
+                    # print (self.probeConcList[i])
+                    df.loc[pos, 'Probe_Conc'] = self.probeConcList[i] # set value to primer concentration
+        df['F_primer'] =np.nan
+        df['R_primer'] =np.nan
+        for i in range(6): # loop through rows except last two rows containing standard curve
+            for j in range(3): # loop through primer concentration list
+                for k in range(4): # every concentration 4x
+                    pos = (12*i)+(4*j)+(k)+1 # translate row and column to position in df 1..96
+                    # print ("position i= ", i, "j= ", j, "k= ", k, "pos= ", pos)
+                    df.loc[pos, ['F_primer', 'R_primer']] = self.primerConcList[j] # set value to primer concentration
+        return df
+    def addProbeHeatMap(self, primerConcList=[]):
+        df = self.dfProbeCreate()
+        self.primerConcList=primerConcList
+        # if primerConcList is empty then default to [200, 300, 400]
+        if len(self.primerConcList)==0:
+            self.primerConcList = [200, 300, 400]
+        plateMatrix = []
+        for r in range (0,8): #loop through rows
+            colList = []
+            for c in range(0,12):
+                # add Ct values to list                
+                colList.append(df['Ct'].iloc[r+(r*11)+c])
+            plateMatrix.append(colList)
+        # print(plateMatrix)
+        # substitute nan for 0
+        plateMatrix = np.nan_to_num(plateMatrix)
+        # for list in plateMatrix:
+        #     print(list)           
+        # reverse order of rows because heatmap put rows g and h at top
+        plateMatrix = plateMatrix[::-1]
+        heatmap = go.Figure(data=go.Heatmap(
+            z=plateMatrix,
+            zmin=15,
+            zmax=40))
+        # colText = ['1\n50nM','2\n50nM','3\n100nM','4\n100nM','5\n200nM','6\n200nM','7\n400nM','8\n400nM','9\n600nM','10\n600nM','11\n800nM','12\n800nM']
+        # make colText but recursively with list self.primerConcList
+        colText = []
+        for i in range(3):
+            for j in range(4):
+                colText.append(str(j+1)+'\t'+str(self.primerConcList[i])+'nM')
+        print(colText)   
+        heatmap.update_layout(
+            height=500,
+            width=800,
+            title={'text': 'Heatmap of Ct in Plate {} ({})'.format(self.getTargetName(), self.probe),
+            'y': 0.95,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'
+            },
+            # title='Heatmap of Ct in Plate {} ({})'.format(self.sheet, self.probe),
+            xaxis=dict(title='', tickvals=[0,1,2,3,4,5,6,7,8,9,10,11], ticktext=colText, side='top', tickangle=45),
+            yaxis=dict(title='ROWS', tickmode='array', tickvals=[0, 1, 2, 3, 4, 5, 6, 7], ticktext=['H std curve', 'G std curve', '800nM F', '600nM E', '400nM D', '200nM C', '100nM B', '50nM A'])
+        )
+        return heatmap.show()
+#     def plotProbeStandards(self):
 #         # df = self.dfCreate()
 #         df = self.addPrimerAndProbeConcToDf(primerConc)
 #         standards = df.loc[df['Property'] == 'Standard']
@@ -489,35 +538,28 @@ class ProbeMatrixVis():
 #             text_auto=True,
 #             title='Standard Number vs Cq' )
 #         figStandards.show()
-#     def ProbePeriodicity(self, primerConc):
-#         primerConc: list
-#         df = self.addPrimerAndProbeConcToDf(primerConc)
-#         # group by Probe and F,R primer concentrations and take mean
-#         avg_across_row_fwd_rev = df.groupby(by=['Probe_Conc', 'F_primer', 'R_primer'], as_index=False)['Ct'].mean()
-#         # avg_across_col_probe = df.groupby(by=['Probe_Conc', 'F_primer', 'R_primer'], as_index=False)['Ct'].mean()
-#         # # round column Ct to nearest two digits in avg_across_row_fwd_rev
-#         # stringify 'F_primer','R_primer' and Probe concentrations and concatenate and add to list
-#         barHeadings_row = (avg_across_row_fwd_rev['F_primer'].astype(str) +
-#             '_' + avg_across_row_fwd_rev['R_primer'].astype(str) + 
-#             '_' + avg_across_row_fwd_rev['Probe_Conc'].astype(str)).tolist()
-#         # barHeadings_col = (avg_across_row_fwd_rev['F_primer'].astype(str) +
-#         #     '_' + avg_across_row_fwd_rev['R_primer'].astype(str) + 
-#         #     '_' + avg_across_row_fwd_rev['Probe_Conc'].astype(str)).tolist()
-#         figAvgProbe = px.bar(
-#             avg_across_row_fwd_rev,
-#             y=avg_across_row_fwd_rev['Ct'],
-#             x=barHeadings_row, #avg_across_row['F_primer'],
-#             labels={'x':'[Fwd_Rev_Probe] Concentration', 'y':'Cq'},
-#             color='Probe_Conc',
-#             barmode='group',
-#             text_auto=True,
-#             title='Periodicity in Increasing [Fwd, Rev] (Going Across Row)<br>[Probe] Held Constant, Four Points per Condition Averaged')
-#         return figAvgProbe.show()
+    def ProbePeriodicity(self):
+        df = self.addProbePropertiesToDf()
+        # group by Probe and F,R primer concentrations and take mean
+        avg_across_row_fwd_rev = df.groupby(by=['Probe_Conc', 'F_primer', 'R_primer'], as_index=False)['Ct'].mean()
+        # avg_across_col_probe = df.groupby(by=['Probe_Conc', 'F_primer', 'R_primer'], as_index=False)['Ct'].mean()
+        # # round column Ct to nearest two digits in avg_across_row_fwd_rev
+        # stringify 'F_primer','R_primer' and Probe concentrations and concatenate and add to list
+        barHeadings_row = (avg_across_row_fwd_rev['F_primer'].astype(str) +
+            '_' + avg_across_row_fwd_rev['R_primer'].astype(str) + 
+            '_' + avg_across_row_fwd_rev['Probe_Conc'].astype(str)).tolist()
+        # barHeadings_col = (avg_across_row_fwd_rev['F_primer'].astype(str) +
+        #     '_' + avg_across_row_fwd_rev['R_primer'].astype(str) + 
+        #     '_' + avg_across_row_fwd_rev['Probe_Conc'].astype(str)).tolist()
+        figAvgProbe = px.bar(
+            avg_across_row_fwd_rev,
+            y=avg_across_row_fwd_rev['Ct'],
+            x=barHeadings_row, #avg_across_row['F_primer'],
+            labels={'x':'[Fwd_Rev_Probe] Concentration', 'y':'Cq'},
+            color='Probe_Conc',
+            barmode='group',
+            text_auto=True,
+            title='Periodicity in Increasing [Fwd, Rev] (Going Across Row)<br>[Probe] Held Constant, Four Points per Condition Averaged')
+        return figAvgProbe.show()
 
-# class LOD(FluorVis): # calculates LOD for a plate with each conc on a row
-#     # probe: str
-#     # fileDir: str
-#     # fileName: str
-#     def __init__(self, probe, fileDir, fileName):
-#         super().__init__(probe, fileDir, fileName)
     
